@@ -172,34 +172,34 @@ describe('json-parser', () => {
     })
   })
 
-  // describe('full suite - from JSON_checker (json.org)', () => {
-  //   const allFileNames = fs.readdirSync('./tests/full-suite')
-  //   const passFileNames = allFileNames.filter(fileName => fileName.startsWith('pass'))
-  //   const failFileNames = allFileNames.filter(fileName => fileName.startsWith('fail'))
-  //   // it('should parse all valid files',  () => {
-  //   //   for (const fileName of passFileNames) {
-  //   //     const json = fs.readFileSync(`./tests/full-suite/${fileName}`, 'utf8')
-  //   //     try {
-  //   //       const result =  JSONParse(json)
-  //   //       assert.ok(result)
-  //   //     } catch (err) {
-  //   //       console.log(fileName, 'failed to parse: \n', err)
-  //   //     }
-  //   //   }
-  //   // })
-  //   it('should reject all invalid files',  () => {
-  //     for (const fileName of failFileNames) {
-  //       const json = fs.readFileSync(`./tests/full-suite/${fileName}`, 'utf8')
-  //       try {
-  //         const result =  JSONParse(json)
-  //         console.log(fileName, 'was parsed successfully: \n', result)
-  //       } catch (err) {
-  //          assert.throws(
-  //           () => JSONParse(json),
-  //           err => true,
-  //         )
-  //       }
-  //     }
-  //   })
-  // })
+  describe('full suite - from JSON_checker (json.org)', () => {
+    const allFileNames = fs.readdirSync('./tests/full-suite')
+    const passFileNames = allFileNames.filter(fileName => fileName.startsWith('pass'))
+    const failFileNames = allFileNames.filter(fileName => fileName.startsWith('fail'))
+    // it('should parse all valid files',  () => {
+    //   for (const fileName of passFileNames) {
+    //     const json = fs.readFileSync(`./tests/full-suite/${fileName}`, 'utf8')
+    //     try {
+    //       const result =  JSONParse(json)
+    //       assert.ok(result)
+    //     } catch (err) {
+    //       console.log(fileName, 'failed to parse: \n', err)
+    //     }
+    //   }
+    // })
+    it('should reject all invalid files', () => {
+      for (const fileName of failFileNames) {
+        const json = fs.readFileSync(`./tests/full-suite/${fileName}`, 'utf8')
+        try {
+          const result = JSONParse(json)
+          console.log(fileName, 'was parsed successfully: \n', result)
+        } catch (err) {
+          assert.throws(
+            () => JSONParse(json),
+            err => true,
+          )
+        }
+      }
+    })
+  })
 })
