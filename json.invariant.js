@@ -1,15 +1,28 @@
-function expect(currentToken, expectedType) {
-  const token = currentToken.value
+const { getCharFromType } = require('./json-parser.utils')
 
-  if (token && token.type === expectedType) {
+function is(token, expectedType) {
+  if (token.type === expectedType) {
     return
   }
-
   throw new Error(
-    `Expected ${expectedType} but got ${token ? token.type : 'EOF'} at position ${token ? token.position : ''}`,
+    `Expected ${getCharFromType(expectedType)} but got ${
+      token.type ? getCharFromType(token.type) : 'EOF'
+    } at position ${token.position}`,
+  )
+}
+
+function isNot(token, expectedType) {
+  if (token.type !== expectedType) {
+    return
+  }
+  throw new Error(
+    `Unexpected token "${token.type ? getCharFromType(token.type) : 'EOF'}" at position ${token.position}`,
   )
 }
 
 module.exports = {
-  expect,
+  expect: {
+    is,
+    isNot,
+  },
 }

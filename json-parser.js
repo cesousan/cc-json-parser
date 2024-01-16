@@ -7,26 +7,24 @@ class JSONParser {
    * @param {JSONLexer} lexer
    */
   constructor(lexer) {
-    this.lexer = lexer
-    this.tokenGenerator = this.lexer.generateTokens()
-    this.previousToken = null
-    this.currentToken = this.tokenGenerator.next()
+    this.getCurrentTokens = getNextToken(lexer.generateTokens())
+    this.consumeToken()
   }
 
   /**
    * the main parse function
-   * @returns {Promise<T extends object>}
+   * @returns {T extends object}
    */
   parse() {
     return this.parseValue()
   }
 
-  async parseValue() {
-    const token = this.currentToken.value
+  parseValue() {
+    const token = this.currentToken
 
-    if (token.type === '{') {
+    if (token.type === 'OPEN_BRACE') {
       return this.parseObject()
-    } else if (token.type === '[') {
+    } else if (token.type === 'OPEN_BRACKET') {
       return this.parseArray()
     } else if (
       token.type === 'STRING' ||
@@ -34,79 +32,88 @@ class JSONParser {
       token.type === 'BOOLEAN' ||
       token.type === 'NULL'
     ) {
-      this.consumeToken()
+      this.consumeToken(this.currentToken)
       return token.value
     }
     throw new Error(`Unexpected token "${token.value}" at position ${token.position}`)
   }
 
-  async parseObject() {
-    expect(this.currentToken, '{')
-    this.consumeToken()
+  parseObject() {
+    expect.is(this.currentToken, 'OPEN_BRACE')
+    this.consumeToken(this.currentToken)
     let obj = {}
-
-    while (this.currentToken.value && this.currentToken.value.type !== '}') {
-      const key = await this.parseString()
-      expect(this.currentToken, ':')
-      this.consumeToken()
-      const value = await this.parseValue()
+    while (this.currentToken.type && this.currentToken.type !== 'CLOSE_BRACE') {
+      const key = this.parseString()
+      expect.is(this.currentToken, 'COLON')
+      this.consumeToken(this.currentToken)
+      const value = this.parseValue()
       obj = { ...obj, [key]: value }
 
-      if (this.currentToken.value && this.currentToken.value.type === ',') {
-        this.consumeToken()
-      } else if (this.currentToken.value && this.currentToken.value.type !== '}') {
-        throw new Error(
-          `Unexpected token "${this.currentToken.value.type}" at position ${this.currentToken.value.position}`,
-        )
+      if (this.currentToken && this.currentToken.type === 'COMMA') {
+        this.consumeToken(this.currentToken)
+      } else {
+        expect.is(this.currentToken, 'CLOSE_BRACE')
       }
     }
-    if (this.previousToken && this.previousToken.value.type === ',') {
-      throw new Error(
-        `Unexpected token "${this.previousToken.value.type}" at position ${this.previousToken.value.position}`,
-      )
-    }
-    expect(this.currentToken, '}')
-    this.consumeToken()
+    expect.isNot(this.previousToken, 'COMMA')
+    expect.is(this.currentToken, 'CLOSE_BRACE')
+    this.consumeToken(this.currentToken)
     return obj
   }
 
-  async parseArray() {
-    expect(this.currentToken, '[')
-    this.consumeToken()
+  parseArray() {
+    expect.is(this.currentToken, 'OPEN_BRACKET')
+    this.consumeToken(this.currentToken)
     let arr = []
 
-    while (this.currentToken.value && this.currentToken.value.type !== ']') {
-      const value = await this.parseValue()
-      arr = [...arr, value]
+    while (this.currentToken && this.currentToken.type !== 'CLOSE_BRACKET') {
+      const value = this.parseValue()
+      arr.push(value)
 
-      if (this.currentToken.value && this.currentToken.value.type === ',') {
-        this.consumeToken()
-      } else if (this.currentToken.value && this.currentToken.value.type !== ']') {
-        throw new Error(
-          `Unexpected token "${this.currentToken.value.type}" at position ${this.currentToken.value.position}`,
-        )
+      if (this.currentToken && this.currentToken.type === 'COMMA') {
+        this.consumeToken(this.currentToken)
+      } else {
+        expect.is(this.currentToken, 'CLOSE_BRACKET')
       }
     }
 
-    expect(this.currentToken, ']')
-    this.consumeToken()
+    expect.is(this.currentToken, 'CLOSE_BRACKET')
+    this.consumeToken(this.currentToken)
     return arr
   }
 
-  async parseString() {
-    const token = this.currentToken.value
+  parseString() {
+    const token = this.currentToken
 
     if (token.type === 'STRING') {
-      this.consumeToken()
+      this.consumeToken(this.currentToken)
       return token.value
     }
 
     throw new Error(`Expected STRING but got ${token.type} at position ${token.position}`)
   }
 
-  consumeToken() {
-    this.previousToken = this.currentToken
-    this.currentToken = this.tokenGenerator.next()
+  consumeToken(token = null) {
+    const { previousToken, currentToken } = this.getCurrentTokens(token)
+    this.previousToken = previousToken
+    this.currentToken = currentToken
+  }
+}
+/**
+ *
+ * @param {IterableIterator<{type: String, value: String|Number|Boolean|null, position: Number, endPosition: Number}>} tokenGenerator
+ * @returns any
+ */
+function getNextToken(tokenGenerator) {
+  return getTokens
+  /**
+   *
+   * @param {type: String, value: String|Number|Boolean|null, position: Number, endPosition: Number} currentToken
+   */
+  function getTokens(currentToken = null) {
+    const previousToken = currentToken
+    const newToken = tokenGenerator.next()?.value
+    return { previousToken, currentToken: newToken }
   }
 }
 
